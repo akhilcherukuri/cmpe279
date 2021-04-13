@@ -1,4 +1,6 @@
-# CMPE279 - Software Security Technology Assignments
+# CMPE279 - Software Security Technology Assignments 
+
 ## Project Members
-1] Akhil Cherukuri [014525420]
-2] Venkata Sai Sri Hari Duvvuri [014533571]
+
+> * Akhil Cherukuri [014525420]
+> * Venkata Sai Sri Hari Duvvuri [014533571]
