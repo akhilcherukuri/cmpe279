@@ -27,7 +27,7 @@ int main(int argc, char const *argv[])
     }
 
     // Attaching socket to port 80
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR,
                                                   &opt, sizeof(opt)))
     {
         perror("setsockopt");
@@ -55,9 +55,32 @@ int main(int argc, char const *argv[])
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    valread = read( new_socket , buffer, 1024);
-    printf("%s\n",buffer );
-    send(new_socket , hello , strlen(hello) , 0 );
-    printf("Hello message sent\n");
+
+    // Privilege seperation using fork() call. Privilege dropping using setuid() call
+
+    pid_t sub_process = fork();
+    if (sub_process < 0) {
+        perror("Fork Failed!");
+        exit(EXIT_FAILURE);
+    }
+    else if (sub_process == 0) {
+        if(setuid(65534) < 0){
+            perror("Drop Previlege Failed!");
+            exit(EXIT_FAILURE);
+        }
+        valread = read(new_socket, buffer, 1024);
+        if(valread < 0) {
+            perror("Read Failed!");
+            exit(EXIT_FAILURE);
+        }
+        printf("%s\n",buffer );
+        send(new_socket , hello , strlen(hello) , 0 );
+        printf("Hello message sent\n");
+
+    }
+    else {// parent wait for child process complete
+        int status = 0;
+        while ((wait(&status)) > 0);
+    }     
     return 0;
 }
