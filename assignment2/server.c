@@ -7,6 +7,10 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 #define PORT 80
 int main(int argc, char const *argv[])
 {
@@ -16,8 +20,21 @@ int main(int argc, char const *argv[])
     int addrlen = sizeof(address);
     char buffer[102] = {0};
     char *hello = "Hello from server";
+    char fd_arr[3];
 
     printf("execve=0x%p\n", execve);
+
+    if(argv[0][2]==15){ //Random Number to check
+	valread = read( argv[0][1] , buffer, 1024); 
+        if(valread < 0) {
+            perror("Read Failed!");
+            exit(EXIT_FAILURE);
+        }
+    	printf("%s\n",buffer ); 
+    	send(argv[0][1] , hello , strlen(hello) , 0 ); 
+    	printf("Hello message sent\n");
+	return 0; 
+    }
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -65,23 +82,19 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
     else if (sub_process == 0) {
-        if(setuid(65534) < 0){
-            perror("Drop Previlege Failed!");
-            exit(EXIT_FAILURE);
-        }
-        valread = read(new_socket, buffer, 1024);
-        if(valread < 0) {
-            perror("Read Failed!");
-            exit(EXIT_FAILURE);
-        }
-        printf("%s\n",buffer );
-        send(new_socket , hello , strlen(hello) , 0 );
-        printf("Hello message sent\n");
-
+        int uid=setuid(65534);
+	    printf("Child process id: %d", uid);
+	    fd_arr[0]=new_socket;
+	    fd_arr[1]=new_socket;
+	    fd_arr[2]=15; //verify child process
+	    execl(argv[0], fd_arr, NULL);
     }
-    else {// parent wait for child process complete
-        int status = 0;
-        while ((wait(&status)) > 0);
-    }     
+    else if(sub_process > 0){
+	    printf("Parent waiting, Process id: %d\n",sub_process);
+	    wait(NULL);
+    }
+    else{
+	    printf("Fork failed");
+    }   
     return 0;
 }
